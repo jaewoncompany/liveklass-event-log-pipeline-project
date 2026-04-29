@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: event-pipeline-config
+  namespace: event-pipeline
+data:
+  DB_HOST: "postgres-service"
+  DB_PORT: "5432"
+  DB_NAME: "eventlog"
+  DB_USER: "postgres"
+  EVENT_TYPES: "page_view,purchase,error,login,logout"
+  PAGES: "/home,/products,/cart,/checkout,/profile,/about"
+  PRODUCTS: "product_001,product_002,product_003,product_004,product_005"
+  ERROR_CODES: "400,401,403,404,500,502,503"
+  USER_COUNT: "50"
+  EVENT_COUNT: "500"
+  BATCH_SIZE: "100"
+  OUTPUT_DIR: "/output"
