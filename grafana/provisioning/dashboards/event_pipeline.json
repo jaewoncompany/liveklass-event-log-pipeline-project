@@ -1,0 +1,71 @@
+{
+  "title": "Event Log Pipeline",
+  "uid": "event-pipeline",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "title": "이벤트 타입별 발생 횟수",
+      "type": "barchart",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "datasource": { "type": "postgres", "uid": "postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT event_type, COUNT(*) AS count FROM events GROUP BY event_type ORDER BY count DESC;",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "xField": "event_type"
+      }
+    },
+    {
+      "id": 2,
+      "title": "시간대별 이벤트 추이",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "datasource": { "type": "postgres", "uid": "postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT date_trunc('hour', timestamp) AS time, COUNT(*) AS count FROM events GROUP BY time ORDER BY time;",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "이벤트 타입 비율",
+      "type": "piechart",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "datasource": { "type": "postgres", "uid": "postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT event_type, COUNT(*) AS count FROM events GROUP BY event_type ORDER BY count DESC;",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "유저별 이벤트 수 Top 10",
+      "type": "barchart",
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "datasource": { "type": "postgres", "uid": "postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT user_id, COUNT(*) AS total FROM events GROUP BY user_id ORDER BY total DESC LIMIT 10;",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "xField": "user_id"
+      }
+    }
+  ],
+  "time": { "from": "now-24h", "to": "now" },
+  "refresh": "30s"
+}
