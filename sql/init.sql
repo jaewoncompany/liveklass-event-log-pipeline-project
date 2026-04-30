@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS raw_events (
 -- Silver layer: 분석용 정제 테이블 (월별 파티셔닝)
 CREATE TABLE IF NOT EXISTS events (
     id          BIGSERIAL,
-    raw_id      BIGINT       NOT NULL,
+    raw_id      BIGINT       NOT NULL UNIQUE,  -- 중복 적재 방지
     event_id    UUID         NOT NULL,
     event_type  VARCHAR(50)  NOT NULL,
     user_id     VARCHAR(50)  NOT NULL,
@@ -34,6 +34,9 @@ CREATE TABLE IF NOT EXISTS events_2026_05 PARTITION OF events
 
 CREATE TABLE IF NOT EXISTS events_2026_06 PARTITION OF events
     FOR VALUES FROM ('2026-06-01') TO ('2026-07-01');
+
+-- 범위 밖 데이터 안전망 (운영에서는 월별 파티션 자동 생성 필요)
+CREATE TABLE IF NOT EXISTS events_default PARTITION OF events DEFAULT;
 
 -- 인덱스 (파티션 테이블에 걸면 각 파티션에 자동 적용)
 CREATE INDEX IF NOT EXISTS idx_events_type      ON events (event_type);

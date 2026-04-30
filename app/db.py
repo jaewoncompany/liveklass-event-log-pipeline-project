@@ -48,36 +48,6 @@ def update_checkpoint(last_raw_id: int):
         )
 
 
-def transform_chunk(from_id: int, to_id: int):
-    sql = text("""
-        INSERT INTO events (
-            raw_id, event_id, event_type, user_id, session_id, timestamp,
-            ip_address, user_agent, page, referrer,
-            duration_ms, error_code, product_id, amount
-        )
-        SELECT
-            id,
-            (payload->>'event_id')::uuid,
-            payload->>'event_type',
-            payload->>'user_id',
-            (payload->>'session_id')::uuid,
-            (payload->>'timestamp')::timestamptz,
-            (payload->>'ip_address')::inet,
-            payload->>'user_agent',
-            payload->>'page',
-            payload->>'referrer',
-            (payload->>'duration_ms')::integer,
-            (payload->>'error_code')::smallint,
-            payload->>'product_id',
-            (payload->>'amount')::numeric
-        FROM raw_events
-        WHERE id > :from_id AND id <= :to_id
-        ON CONFLICT DO NOTHING;
-    """)
-    with engine.begin() as conn:
-        conn.execute(sql, {"from_id": from_id, "to_id": to_id})
-
-
 def run_micro_batch():
     last_id = get_checkpoint()
 
@@ -92,8 +62,41 @@ def run_micro_batch():
     current = last_id
     while current < max_id:
         next_id = min(current + BATCH_SIZE, max_id)
-        transform_chunk(current, next_id)
-        update_checkpoint(next_id)
+        # transform + checkpoint를 하나의 트랜잭션으로 처리
+        # 중간에 실패해도 checkpoint가 업데이트되지 않아 재실행 시 해당 청크부터 재처리
+        with engine.begin() as conn:
+            conn.execute(
+                text("""
+                    INSERT INTO events (
+                        raw_id, event_id, event_type, user_id, session_id, timestamp,
+                        ip_address, user_agent, page, referrer,
+                        duration_ms, error_code, product_id, amount
+                    )
+                    SELECT
+                        id,
+                        (payload->>'event_id')::uuid,
+                        payload->>'event_type',
+                        payload->>'user_id',
+                        (payload->>'session_id')::uuid,
+                        (payload->>'timestamp')::timestamptz,
+                        (payload->>'ip_address')::inet,
+                        payload->>'user_agent',
+                        payload->>'page',
+                        payload->>'referrer',
+                        (payload->>'duration_ms')::integer,
+                        (payload->>'error_code')::smallint,
+                        payload->>'product_id',
+                        (payload->>'amount')::numeric
+                    FROM raw_events
+                    WHERE id > :from_id AND id <= :to_id
+                    ON CONFLICT (raw_id) DO NOTHING;
+                """),
+                {"from_id": current, "to_id": next_id},
+            )
+            conn.execute(
+                text("UPDATE etl_checkpoint SET last_raw_id = :id, updated_at = now() WHERE id = 1"),
+                {"id": next_id},
+            )
         total += next_id - current
         print(f"[batch] {current+1}~{next_id} done")
         current = next_id
