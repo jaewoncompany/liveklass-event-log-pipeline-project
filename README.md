@@ -145,6 +145,11 @@ FROM events GROUP BY event_type ORDER BY count DESC;
 | `event_distribution.png` | 이벤트 타입 비율 |
 | `top_users.png` | 이벤트 수 상위 10명 |
 
+![이벤트 타입별 발생 횟수](./output/event_type_count.png)
+![시간대별 이벤트 추이](./output/hourly_trend.png)
+![이벤트 타입 비율](./output/event_distribution.png)
+![유저별 이벤트 수 Top 10](./output/top_users.png)
+
 ### Grafana (대시보드)
 `http://localhost:3000` 접속 시 PostgreSQL 데이터소스와 대시보드가 자동으로 프로비저닝됩니다. 별도 설정 없이 바로 확인할 수 있습니다.
 
