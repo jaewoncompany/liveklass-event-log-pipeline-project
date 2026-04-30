@@ -23,6 +23,13 @@ spec:
                     secretKeyRef:
                       name: event-pipeline-secret
                       key: DB_PASSWORD
+              resources:
+                requests:
+                  memory: "256Mi"
+                  cpu: "250m"
+                limits:
+                  memory: "512Mi"
+                  cpu: "500m"
               volumeMounts:
                 - name: output
                   mountPath: /output

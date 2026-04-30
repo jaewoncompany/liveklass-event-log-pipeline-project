@@ -1,11 +1,10 @@
 import os
 import json
 from sqlalchemy import create_engine, text
-
-BATCH_SIZE = int(os.getenv("BATCH_SIZE", 100))
-
 from sqlalchemy.pool import QueuePool
 from psycopg2 import connect as pg_connect
+
+BATCH_SIZE = int(os.getenv("BATCH_SIZE", 100))
 
 def _creator():
     return pg_connect(
@@ -27,7 +26,6 @@ engine = create_engine(
 
 
 def save_raw(events: list[dict]):
-    """Bronze: 원본 이벤트를 JSONB로 그대로 적재"""
     rows = [{"payload": json.dumps(e)} for e in events]
     with engine.begin() as conn:
         conn.execute(
@@ -36,16 +34,13 @@ def save_raw(events: list[dict]):
         )
 
 
-
 def get_checkpoint() -> int:
-    """마지막으로 처리한 raw_id 조회"""
     with engine.connect() as conn:
         result = conn.execute(text("SELECT last_raw_id FROM etl_checkpoint WHERE id = 1"))
         return result.scalar()
 
 
 def update_checkpoint(last_raw_id: int):
-    """처리 완료된 raw_id 기록"""
     with engine.begin() as conn:
         conn.execute(
             text("UPDATE etl_checkpoint SET last_raw_id = :id, updated_at = now() WHERE id = 1"),
@@ -54,7 +49,6 @@ def update_checkpoint(last_raw_id: int):
 
 
 def transform_chunk(from_id: int, to_id: int):
-    """Silver: raw_events → events 변환 적재 (청크 단위)"""
     sql = text("""
         INSERT INTO events (
             raw_id, event_id, event_type, user_id, session_id, timestamp,
