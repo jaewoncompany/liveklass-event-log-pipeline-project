@@ -11,6 +11,10 @@
 필요한 도구: Docker, Docker Compose
 
 ```bash
+# 환경변수 파일 생성
+cp .env.example .env
+# .env 파일을 열어 DB_PASSWORD 값을 설정하세요
+
 # 전체 스택 실행
 docker compose up --build
 ```
